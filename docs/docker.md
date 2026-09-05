@@ -27,7 +27,7 @@ Abrir **http://localhost:3110** y crear el primer administrador. No existe una c
 
 En esta edición la API publica `features.faceVision=false`, oculta acciones biométricas y conserva **Registro supervisado** en Fichadas. La carga manual requiere persona, instante, entrada/salida y motivo; después sigue el mismo procesamiento y auditoría.
 
-Cuando la imagen GHCR esté publicada, se podrá sustituir la construcción local por:
+La imagen pública `0.1.0` ya está disponible en GHCR. Para instalarla sin construir la aplicación:
 
 ```powershell
 node scripts/docker.mjs prepare
@@ -35,7 +35,7 @@ node scripts/docker.mjs pull 0.1.0 --registry
 node scripts/docker.mjs start --registry
 ```
 
-La única imagen pública prevista es `ghcr.io/luiscarlosfertl-ia/control-rrhh-app`. La primera publicación puede crear el paquete privado; cambiarlo a público desde **Package settings → Change visibility → Public** es una operación separada que GitHub presenta como irreversible.
+La única imagen pública es `ghcr.io/luiscarlosfertl-ia/control-rrhh-app`. Las etiquetas `0.1.0`, `0.1` y `latest` se publicaron con el mismo digest, SBOM y atestación; la descarga anónima está habilitada. FaceVision no se publica en GHCR.
 
 ## Instalación con FaceVision privado
 

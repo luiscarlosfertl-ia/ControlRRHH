@@ -2,7 +2,7 @@
 
 Aplicación independiente de control horario, React + PatternFly, Node/Express y MongoDB. Base nueva `control_rrhh`, sin importar personas o biometría de Origen Ingenio.
 
-Proyecto público creado por Luis Carlos Fertl con asistencia de desarrollo de Codex. La aplicación y su imagen `ghcr.io/luiscarlosfertl-ia/control-rrhh-app` son publicables; **FaceVision permanece privado**. El runtime facial, sus modelos, manifiestos generados, claves, capturas, embeddings, base y configuración local no forman parte del repositorio ni de la imagen pública. Ver [créditos y desarrollo paso a paso](docs/desarrollo-con-codex.md) y [publicación y actualización](docs/docker.md#publicación-pública-y-facevision-privado).
+Proyecto público creado por Luis Carlos Fertl con asistencia de desarrollo de Codex. La aplicación y su imagen `ghcr.io/luiscarlosfertl-ia/control-rrhh-app:0.1.0` son públicas; **FaceVision permanece privado**. El runtime facial, sus modelos, manifiestos generados, claves, capturas, embeddings, base y configuración local no forman parte del repositorio ni de la imagen pública. Ver [créditos y desarrollo paso a paso](docs/desarrollo-con-codex.md) y [publicación y actualización](docs/docker.md#publicación-de-versiones).
 
 > **Desarrollado con Codex.** Dirección del producto, requisitos y decisiones de publicación: Luis Carlos Fertl. Implementación, documentación y verificación realizadas de forma colaborativa con Codex de OpenAI.
 
