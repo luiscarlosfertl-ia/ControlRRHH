@@ -1,0 +1,36 @@
+services:
+  facevision:
+    image: controlrrhh-facevision:${APP_VERSION:?Preparar .deploy/compose.env}
+    build: { context: ./.deploy/facevision }
+    restart: unless-stopped
+    environment:
+      HOME: /home/face
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    volumes:
+      - type: bind
+        source: ./.deploy/models/buffalo_l
+        target: /home/face/.insightface/models/buffalo_l
+        read_only: true
+        bind: { create_host_path: false }
+    networks: [private]
+    healthcheck:
+      test:
+        [
+          CMD,
+          python,
+          -c,
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8007/health', timeout=5)",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
+    security_opt: [no-new-privileges:true]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+  app:
+    depends_on:
+      facevision: { condition: service_healthy }
+    environment:
+      FACEVISION_ENABLED: "true"
+      FACEVISION_URL: http://facevision:8007

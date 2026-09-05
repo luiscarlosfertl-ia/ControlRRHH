@@ -41,11 +41,14 @@ test("API completa aislada: sesión, catálogos, fichadas, revisión, permisos e
       "no sesión bloquea datos, primer administrador único y CSRF",
       async () => {
         await request("/resources/people", "GET", undefined, 401);
-        await request("/auth/setup", "POST", {
+        const setup = await request("/auth/setup", "POST", {
           name: "QA",
           email: "qa@example.test",
           password: "Temporary-testing-42",
         });
+        assert.deepEqual(setup.features, { faceVision: true });
+        const state = await request("/auth/state");
+        assert.deepEqual(state.features, { faceVision: true });
         await request(
           "/auth/setup",
           "POST",

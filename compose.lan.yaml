@@ -6,6 +6,8 @@ services:
       TLS_KEY: /run/secrets/tls_key
       HTTPS_PORT: "3444"
       LAN_HOST: 0.0.0.0
+      # Complete first setup locally before exposing the HTTPS LAN listener.
+      INITIAL_SETUP_TRUST_CONTAINER_NETWORK: "false"
     ports: ["${LAN_BIND:-0.0.0.0}:${HTTPS_PORT:-3445}:3444"]
     secrets: [tls_cert, tls_key]
 secrets:

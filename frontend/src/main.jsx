@@ -110,20 +110,26 @@ function App() {
     return (
       <Auth
         setup={auth.setupRequired}
-        onSuccess={(account) => setAuth({ account })}
+        features={auth.features}
+        onSuccess={(account) => setAuth((current) => ({ ...current, account }))}
       />
     );
   return (
     <Workspace
       account={auth.account}
+      features={auth.features}
       onLogout={async () => {
         await api("/auth/logout", { method: "POST" });
-        setAuth({ account: null, setupRequired: false });
+        setAuth((current) => ({
+          ...current,
+          account: null,
+          setupRequired: false,
+        }));
       }}
     />
   );
 }
-function Auth({ setup, onSuccess }) {
+function Auth({ setup, features = {}, onSuccess }) {
   const [data, setData] = useState({ name: "", email: "", password: "" }),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
@@ -223,18 +229,28 @@ function Auth({ setup, onSuccess }) {
             <ArrowRight size={17} />
           </Button>
           <div className="auth-foot">
-            <ScanFace size={18} /> Fichaje FaceVision independiente de la sesión
-            administrativa.
+            {features.faceVision !== false ? (
+              <>
+                <ScanFace size={18} /> Fichaje FaceVision independiente de la
+                sesión administrativa.
+              </>
+            ) : (
+              <>
+                <Clock3 size={18} /> Edición pública con registro supervisado.
+              </>
+            )}
           </div>
         </form>
       </main>
     </div>
   );
 }
-export function Workspace({ account, onLogout }) {
+export function Workspace({ account, onLogout, features = {} }) {
   const { view, go, back, canBack } = useViewNavigation(nav.map((x) => x[0]));
   const [collapsed, setCollapsed] = useState(false),
     [run, setRun] = useState(null);
+  const faceVision = features.faceVision !== false,
+    visibleNav = faceVision ? nav : nav.filter(([key]) => key !== "terminals");
   const navigate = (name) => {
     if (go(name) !== false) setRun(null);
   };
@@ -257,7 +273,7 @@ export function Workspace({ account, onLogout }) {
           </div>
         </div>
         <nav>
-          {nav.map(([key, label, Icon], i) => (
+          {visibleNav.map(([key, label, Icon], i) => (
             <React.Fragment key={key}>
               {[0, 7, 12].includes(i) && (
                 <span className="nav-section">
@@ -299,25 +315,24 @@ export function Workspace({ account, onLogout }) {
             <strong>{item[1]}</strong>
           </div>
           <div className="topbar-end">
-
-          <IconButton
-            title="Volver"
-            isDisabled={!canBack}
-            onClick={() => {
-              setRun(null);
-              back();
-            }}
-          >
-            <MoveLeft size={20}/>
-          </IconButton>
-          <IconButton
-            title="Paseo de esta vista"
-            onClick={() =>
-              start(viewSteps(view), `Paseo · ${viewHelp[view].title}`)
-            }
-          >
-            <Ambulance size={20} />
-          </IconButton>
+            <IconButton
+              title="Volver"
+              isDisabled={!canBack}
+              onClick={() => {
+                setRun(null);
+                back();
+              }}
+            >
+              <MoveLeft size={20} />
+            </IconButton>
+            <IconButton
+              title="Paseo de esta vista"
+              onClick={() =>
+                start(viewSteps(view), `Paseo · ${viewHelp[view].title}`)
+              }
+            >
+              <Ambulance size={20} />
+            </IconButton>
 
             <span className="today-label">
               {new Date().toLocaleDateString("es-AR", {
@@ -367,7 +382,11 @@ export function Workspace({ account, onLogout }) {
           ) : view === "help" ? (
             <HelpCenter go={navigate} start={start} />
           ) : view === "dashboard" ? (
-            <Dashboard go={navigate} name={account.name} />
+            <Dashboard
+              go={navigate}
+              name={account.name}
+              faceVision={faceVision}
+            />
           ) : view === "schedule" ? (
             <Schedule />
           ) : view === "settings" ? (
@@ -377,6 +396,7 @@ export function Workspace({ account, onLogout }) {
               key={view}
               resource={catalog[view] ? view : "people"}
               go={navigate}
+              faceVision={faceVision}
             />
           )}
         </main>
@@ -397,7 +417,7 @@ function PageHeading({ eyebrow, title, description, children }) {
     </div>
   );
 }
-function Dashboard({ go, name }) {
+function Dashboard({ go, name, faceVision = true }) {
   const [data, setData] = useState(null),
     [error, setError] = useState("");
   useEffect(() => {
@@ -489,13 +509,21 @@ function Dashboard({ go, name }) {
                 "Horarios, rotaciones y equipos.",
                 "schedule",
               ],
-              [
-                ScanFace,
-                "02",
-                "Registrá",
-                "FaceVision o marcación supervisada.",
-                "terminals",
-              ],
+              faceVision
+                ? [
+                    ScanFace,
+                    "02",
+                    "Registrá",
+                    "FaceVision o marcación supervisada.",
+                    "terminals",
+                  ]
+                : [
+                    Clock3,
+                    "02",
+                    "Registrá",
+                    "Marcación supervisada sin biometría.",
+                    "punches",
+                  ],
               [
                 ClipboardCheck,
                 "03",
@@ -610,7 +638,7 @@ function Dashboard({ go, name }) {
     </>
   );
 }
-function ResourcePage({ resource, go }) {
+function ResourcePage({ resource, go, faceVision = true }) {
   const [editor, setEditor] = useState(null),
     [detail, setDetail] = useState(null),
     [face, setFace] = useState(null),
@@ -627,7 +655,9 @@ function ResourcePage({ resource, go }) {
     [reviewHistory, setReviewHistory] = useState(null),
     [evidence, setEvidence] = useState(null);
   const config = catalog[resource],
-    mutable = !["punches", "reviews", "audit"].includes(resource),
+    mutable =
+      !["punches", "reviews", "audit"].includes(resource) &&
+      !(resource === "terminals" && !faceVision),
     reload = () => setRevision((n) => n + 1);
   async function decision(row, status) {
     try {
@@ -687,7 +717,7 @@ function ResourcePage({ resource, go }) {
           </IconButton>
         </>
       )}
-      {resource === "people" && (
+      {resource === "people" && faceVision && (
         <>
           <IconButton title="Registrar rostros" onClick={() => setFace(row)}>
             <ScanFace size={17} />
@@ -706,7 +736,7 @@ function ResourcePage({ resource, go }) {
           <Users size={17} />
         </IconButton>
       )}
-      {resource === "terminals" && (
+      {resource === "terminals" && faceVision && (
         <IconButton title="Generar enlace privado" onClick={() => getLink(row)}>
           <Link size={17} />
         </IconButton>
@@ -748,6 +778,14 @@ function ResourcePage({ resource, go }) {
   return (
     <>
       <PageHeading title={config.title} description={config.description} />
+      {!faceVision && ["people", "punches", "terminals"].includes(resource) && (
+        <div className="info-strip">
+          <Clock3 size={17} />
+          {resource === "terminals"
+            ? "FaceVision no está habilitado. Esta edición usa registro supervisado desde Fichadas."
+            : "Edición pública sin biometría: las fichadas se cargan mediante Registro supervisado."}
+        </div>
+      )}
       {resource === "reviews" && (
         <div className="info-strip">
           <ClipboardCheck size={17} />
@@ -782,9 +820,11 @@ function ResourcePage({ resource, go }) {
                 isChecked={all}
                 onChange={(_, v) => setAll(v)}
               />
-              <Button variant="secondary" onClick={() => go("terminals")}>
-                Terminales
-              </Button>
+              {faceVision && (
+                <Button variant="secondary" onClick={() => go("terminals")}>
+                  Terminales
+                </Button>
+              )}
               <Button variant="secondary" onClick={() => setManual(true)}>
                 Registro supervisado
               </Button>
@@ -1288,14 +1328,10 @@ function Schedule() {
               setPage(1);
             }}
           />
-            <Button
-              variant="secondary"
-              onClick={() => setRevision((n) => n + 1)}
-            >
-              Actualizar
-            </Button>
+          <Button variant="secondary" onClick={() => setRevision((n) => n + 1)}>
+            Actualizar
+          </Button>
           <div className="toolbar-actions">
-
             <TextInput
               type="month"
               aria-label="Mes"

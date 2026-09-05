@@ -58,7 +58,7 @@ function setVersion(v) {
     config().replace(/^APP_VERSION=.+$/m, `APP_VERSION=${checkVersion(v)}`),
   );
 }
-function compose(argv, env = {}) {
+function compose(argv, env = {}, options = {}) {
   config();
   run(
     "docker",
@@ -68,6 +68,9 @@ function compose(argv, env = {}) {
       configPath,
       "-f",
       "compose.yaml",
+      ...(options.faceVision || flag("--facevision")
+        ? ["-f", "compose.facevision.yaml"]
+        : []),
       ...(flag("--registry") ? ["-f", "compose.registry.yaml"] : []),
       ...(flag("--lan") ? ["-f", "compose.lan.yaml"] : []),
       ...argv,
@@ -102,18 +105,19 @@ function prepare() {
   const python = flag("--python")
     ? value("--python")
     : previous.python || "python";
-  if (!sdk) throw new Error("Indicá --sdk con la carpeta sdk-faceVision.");
-  run(python, [
-    "deploy/facevision/export_profile.py",
-    sdk,
-    path.join(dir, "facevision"),
-  ]);
-  for (const name of ["Dockerfile", "requirements.txt", ".dockerignore"])
-    fs.copyFileSync(
-      path.join(root, "deploy/facevision", name),
-      path.join(dir, "facevision", name),
-    );
-  fs.writeFileSync(sourcePath, JSON.stringify({ sdk, python }, null, 2));
+  if (sdk) {
+    run(python, [
+      "deploy/facevision/export_profile.py",
+      sdk,
+      path.join(dir, "facevision"),
+    ]);
+    for (const name of ["Dockerfile", "requirements.txt", ".dockerignore"])
+      fs.copyFileSync(
+        path.join(root, "deploy/facevision", name),
+        path.join(dir, "facevision", name),
+      );
+    fs.writeFileSync(sourcePath, JSON.stringify({ sdk, python }, null, 2));
+  }
   fresh(
     configPath,
     "APP_VERSION=0.1.0\nHTTP_PORT=3110\nHTTPS_PORT=3445\nLAN_BIND=0.0.0.0\n",
@@ -169,30 +173,32 @@ try {
   if (command === "prepare") prepare();
   else if (command === "build") {
     const tag = checkVersion(args[1]);
-    // Updating the app must not silently retain an old FaceVision source profile.
     prepare();
-    for (const image of [
-      `controlrrhh-app:${tag}`,
-      `controlrrhh-facevision:${tag}`,
-    ]) {
-      const exists = spawnSync("docker", ["image", "inspect", image], {
-        stdio: "ignore",
-        windowsHide: true,
-      });
-      if (exists.status === 0)
-        throw new Error(
-          "Esa versión ya existe. Usá otra etiqueta para conservar rollback.",
-        );
-    }
+    const image = `controlrrhh-app:${tag}`;
+    const exists = spawnSync("docker", ["image", "inspect", image], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    if (exists.status === 0)
+      throw new Error(
+        "Esa versión de la app ya existe. Usá otra etiqueta para conservar rollback.",
+      );
     compose(["config", "--quiet"], { APP_VERSION: tag });
-    compose(["build", "--pull", "app", "facevision"], { APP_VERSION: tag });
+    compose(["build", "--pull", "app"], { APP_VERSION: tag });
     setVersion(tag);
-    console.log(
-      `Imágenes ${tag} construidas. start recrea servicios sin borrar volúmenes.`,
-    );
+    console.log(`App ${tag} construida. start inicia la edición pública.`);
   } else if (command === "build-facevision") {
     const tag = checkVersion(args[1]);
     prepare();
+    for (const name of [
+      "hr_runtime.py",
+      "hr_fast_face.py",
+      "source-manifest.json",
+    ])
+      if (!fs.existsSync(path.join(dir, "facevision", name)))
+        throw new Error(
+          "FaceVision privado no está preparado. Ejecutá prepare --sdk antes de construirlo.",
+        );
     const image = `controlrrhh-facevision:${tag}`;
     const exists = spawnSync("docker", ["image", "inspect", image], {
       stdio: "ignore",
@@ -202,14 +208,18 @@ try {
       throw new Error(
         "Esa versión privada de FaceVision ya existe. Usá otra etiqueta para conservar rollback.",
       );
-    compose(["config", "--quiet"], { APP_VERSION: tag });
-    compose(["build", "--pull", "facevision"], { APP_VERSION: tag });
+    compose(["config", "--quiet"], { APP_VERSION: tag }, { faceVision: true });
+    compose(
+      ["build", "--pull", "facevision"],
+      { APP_VERSION: tag },
+      { faceVision: true },
+    );
     setVersion(tag);
     console.log(
       `FaceVision privado ${tag} construido localmente. El código generado permanece en .deploy.`,
     );
   } else if (command === "start") {
-    requireModels();
+    if (flag("--facevision")) requireModels();
     compose(["up", "-d", "--no-build", "--wait", "--wait-timeout", "300"]);
     console.log(
       flag("--lan")
@@ -223,18 +233,19 @@ try {
     compose(["pull", "app"], { APP_VERSION: tag });
     setVersion(tag);
     console.log(
-      `App pública ${tag} descargada y seleccionada. FaceVision debe existir localmente con la misma versión. Ejecutá start --registry${flag("--lan") ? " --lan" : ""}.`,
+      `App pública ${tag} descargada y seleccionada. Ejecutá start --registry${flag("--facevision") ? " --facevision" : ""}${flag("--lan") ? " --lan" : ""}.`,
     );
   } else if (command === "select") {
     const tag = checkVersion(args[1]);
-    for (const image of [
+    const images = [
       `controlrrhh-app:${tag}`,
-      `controlrrhh-facevision:${tag}`,
-    ])
+      ...(flag("--facevision") ? [`controlrrhh-facevision:${tag}`] : []),
+    ];
+    for (const image of images)
       run("docker", ["image", "inspect", "--format", "{{.Id}}", image]);
     setVersion(tag);
     console.log(
-      `Seleccionada ${tag}. Ejecutá start${flag("--lan") ? " --lan" : ""}. No restaura datos.`,
+      `Seleccionada ${tag}. Ejecutá start${flag("--facevision") ? " --facevision" : ""}${flag("--lan") ? " --lan" : ""}. No restaura datos.`,
     );
   } else if (command === "backup") {
     const filename = `control_rrhh-${new Date().toISOString().replace(/[:.]/g, "-")}.archive.gz`;
@@ -282,15 +293,12 @@ try {
     const target = path.join(folder, `controlrrhh-${tag}.tar`);
     if (fs.existsSync(target))
       throw new Error("El archivo de versión ya existe; no se sobrescribe.");
-    run("docker", [
-      "image",
-      "save",
-      "--output",
-      target,
+    const images = [
       `controlrrhh-app:${tag}`,
-      `controlrrhh-facevision:${tag}`,
+      ...(flag("--facevision") ? [`controlrrhh-facevision:${tag}`] : []),
       "mongo:8.0",
-    ]);
+    ];
+    run("docker", ["image", "save", "--output", target, ...images]);
     console.log(
       "Imágenes exportadas. No contienen la base, las claves, certificados ni modelos. Ver guía de traslado.",
     );
@@ -299,7 +307,7 @@ try {
   else if (command === "logs") compose(["logs", "--tail", "100"]);
   else
     throw new Error(
-      "Uso: node scripts/docker.mjs prepare|build VERSION|build-facevision VERSION|pull VERSION --registry|start|select VERSION|backup|save|status|stop|logs [--registry] [--lan]",
+      "Uso: node scripts/docker.mjs prepare|build VERSION|build-facevision VERSION|pull VERSION --registry|start|select VERSION|backup|save|status|stop|logs [--registry] [--facevision] [--lan]",
     );
 } catch (error) {
   console.error(error.message);

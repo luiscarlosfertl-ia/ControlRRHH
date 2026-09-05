@@ -8,9 +8,22 @@ Proyecto público creado por Luis Carlos Fertl con asistencia de desarrollo de C
 
 ## Ejecutar
 
-Para instalar como conjunto de contenedores, ver **[Docker: ControlRRHH + FaceVision + MongoDB](docs/docker.md)**. Incluye preparación, primera versión, HTTPS LAN, backups, nuevas versiones y rollback. La receta usa una base Docker nueva y no migra automáticamente la instalación nativa. Las imágenes todavía requieren construcción y validación en un motor Docker.
+Para instalar on-premise, ver **[ControlRRHH en Docker](docs/docker.md)**. La edición pública ejecuta app + Mongo y usa fichadas supervisadas; la edición biométrica agrega FaceVision privado con `--facevision`. Ambas conservan la misma planificación, procesamiento, revisión, auditoría e informes.
 
-Requiere Node 22 o superior, MongoDB local y el servicio FaceVision de Origen escuchando internamente en `http://127.0.0.1:8007`.
+Inicio público desde el código:
+
+```powershell
+git clone https://github.com/luiscarlosfertl-ia/ControlRRHH.git
+cd ControlRRHH
+npm install
+node scripts/docker.mjs prepare
+node scripts/docker.mjs build 0.1.0
+node scripts/docker.mjs start
+```
+
+Abrir http://localhost:3110 y crear el primer administrador. No hay credenciales predeterminadas.
+
+Para ejecución nativa de desarrollo requiere Node 22 o superior, MongoDB local y, sólo si se habilita biometría, un servicio FaceVision compatible en `http://127.0.0.1:8007`.
 
 ```powershell
 cd C:\Users\luis_\Documents\Playground\ControlRRHH
@@ -28,8 +41,8 @@ Desarrollo con recarga frontend: `npm run dev`, web http://127.0.0.1:5190. Backe
 1. Configurar organización, zona horaria y reglas genéricas.
 2. Crear grupos y personas. El legajo es incremental y no requiere correo. El cupo de vacaciones se define por persona.
 3. Crear horarios, ciclos rotativos y asignaciones vigentes a persona o grupo. Un día sin turno dentro del ciclo es descanso; la fecha ancla indica el día 1.
-4. Registrar tres capturas de la misma persona con referencia de autorización. El catálogo queda cifrado; puede revocarse. No se importa biometría de otra aplicación.
-5. Crear terminal y generar su enlace privado (revoca el anterior). Abrirlo en el dispositivo y permitir cámara. FaceVision detecta; el óvalo cambia a verde; espera configurada; 1–2–3; identificación y resultado. Se espera retirar el rostro antes de rearmar.
+4. En la edición biométrica, registrar tres capturas de la misma persona con referencia de autorización. El catálogo queda cifrado; puede revocarse. No se importa biometría de otra aplicación.
+5. En la edición biométrica, crear una terminal y generar su enlace privado. En la edición pública, usar Registro supervisado desde Fichadas.
 6. Fichar: alterna entrada/salida según la última ficha de ese legajo, independientemente de turnos. Guarda hora del servidor con segundos y coincidencia. Evita duplicados consecutivos. Alternativa manual supervisada con motivo.
 7. Procesar un rango de hasta 31 días. Se generan jornadas en revisión; pares completos salen de pendientes. Entradas abiertas siguen pendientes. Reintentar es seguro si se interrumpió el marcador de procesamiento.
 8. Revisar normales, fuera de turno y extras autorizadas, faltas, tardanzas y salidas anticipadas. Aprobar con observación cuando hay incidencias. Una jornada aprobada debe reabrirse para recalcular.
@@ -63,7 +76,7 @@ La edición requiere administrador y motivo: permite agregar/quitar/cambiar tram
 
 ## Alta y prueba facial
 
-En **Personas**, guardar primero el legajo. En las acciones de su fila: **Registrar rostros** (ícono de rostro), autorizar cámara, indicar la referencia de autorización y completar las tres capturas de la misma persona. Se habilita el reconocimiento al completar 3/3. Para reemplazarlas, revocar el catálogo y volver a registrar.
+Esta capacidad sólo aparece cuando `FACEVISION_ENABLED=true`. En **Personas**, guardar primero el legajo. En las acciones de su fila: **Registrar rostros** (ícono de rostro), autorizar cámara, indicar la referencia de autorización y completar las tres capturas de la misma persona. Se habilita el reconocimiento al completar 3/3. Para reemplazarlas, revocar el catálogo y volver a registrar.
 
 **Probar rostro · sin fichar** está disponible en la fila y dentro del catálogo completo. Muestra si corresponde al legajo elegido, su nombre e índice de similitud; no genera fichadas ni conserva la foto de prueba. Usa el catálogo activo, umbral 0,72 y margen 0,05, no los ajustes particulares de una terminal. Una terminal debe validarse también con sus propios parámetros. Requiere administración y cámara en localhost o HTTPS.
 
@@ -79,11 +92,11 @@ Opcionalmente agrega 20 personas **DEMO** activas (10 por grupo) con legajos ún
 
 ## Configuración de entorno
 
-Variables opcionales: `MONGO_URI` (default mongodb://127.0.0.1:27017), `MONGO_DB` (sólo nombres control_rrhh*), `PORT` (3100), `FACEVISION_URL` (http://127.0.0.1:8007).
+Variables opcionales: `MONGO_URI` (default mongodb://127.0.0.1:27017), `MONGO_DB` (sólo nombres control_rrhh*), `PORT` (3100), `FACEVISION_ENABLED` (default nativo `true`) y `FACEVISION_URL` (http://127.0.0.1:8007). El Compose público establece `FACEVISION_ENABLED=false`; el overlay privado lo habilita.
 
 Biometría: `BIOMETRIC_KEY`, 32 bytes hex. En desarrollo se crea una clave privada en `.local/biometric.key`. **Respaldar la clave junto con la base, en un almacén separado y protegido**: perderla impide recuperar las capturas. No subirla a Git. En producción es obligatoria la variable; restringir además ACL y cifrado de disco.
 
-LAN/tablet: configurar `TLS_CERT`, `TLS_KEY`, opcional `HTTPS_PORT=3444` y `LAN_HOST`. El certificado debe ser confiable en la tablet. El listener HTTP sólo escucha loopback; no se abrió firewall ni se publicó a Internet. El enlace se debe generar desde la URL HTTPS que usará el dispositivo. No usar HTTP por IP para cámaras ni omitir validación de certificados. Preferir proxy/LAN aislada y endpoint de kiosco dedicado antes de producción.
+LAN/tablet: completar primero el alta del administrador en `http://127.0.0.1:3110`; luego configurar `TLS_CERT`, `TLS_KEY`, opcional `HTTPS_PORT=3444` y `LAN_HOST`. El certificado debe ser confiable en la tablet. El listener HTTP sólo escucha loopback; no se abrió firewall ni se publicó a Internet. El enlace se debe generar desde la URL HTTPS que usará el dispositivo. No usar HTTP por IP para cámaras ni omitir validación de certificados. Preferir proxy/LAN aislada y endpoint de kiosco dedicado antes de producción.
 
 ## Verificación y alcance
 

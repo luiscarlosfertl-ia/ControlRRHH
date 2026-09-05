@@ -1,4 +1,5 @@
 import { fail, decrypt } from "./security.js";
+import { faceVisionEnabled } from "./runtimeConfig.js";
 export function capture(body) {
   const near = body?.captures?.near;
   if (
@@ -10,6 +11,11 @@ export function capture(body) {
   return { near };
 }
 export async function callFace(operation, body) {
+  if (!faceVisionEnabled())
+    fail(
+      "FaceVision está deshabilitado en esta instalación. Usá marcación supervisada.",
+      503,
+    );
   const base = (process.env.FACEVISION_URL || "http://127.0.0.1:8007").replace(
     /\/+$/,
     "",

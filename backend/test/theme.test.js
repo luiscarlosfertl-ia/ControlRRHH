@@ -47,6 +47,8 @@ test("identidad visual: usa la paleta naranja de Origen Ingenio", async () => {
   assert.match(brand, /\/branding\/control-rrhh-mark\.png/);
   assert.match(brand, /Desarrollado con <strong>Codex<\/strong>/);
   assert.match(main, /<CodexCredit compact \/>/);
+  assert.match(main, /features\.faceVision !== false/);
+  assert.match(main, /Edición pública sin biometría/);
   assert.match(html, /rel="icon"[\s\S]*control-rrhh-mark\.png/);
 
   // Los colores semánticos no se sustituyen por la marca.

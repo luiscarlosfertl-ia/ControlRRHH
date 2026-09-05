@@ -40,6 +40,7 @@ import { capture, callFace, presence, identify } from "./facevision.js";
 import { presets, applyPreset } from "./presets.js";
 import { editSchema, editedValues, snapshotReview } from "./reviewEditing.js";
 import { attendanceReport } from "./reports.js";
+import { faceVisionEnabled, initialSetupAllowed } from "./runtimeConfig.js";
 import {
   nextDirection,
   projectAttendance,
@@ -268,7 +269,16 @@ export async function appendPunch({
   });
 }
 export function createApp() {
-  const app = express();
+  const app = express(),
+    features = Object.freeze({ faceVision: faceVisionEnabled() }),
+    requireFaceVision = (_req, _res, next) => {
+      if (!features.faceVision)
+        fail(
+          "FaceVision está deshabilitado en esta instalación. Usá marcación supervisada.",
+          503,
+        );
+      next();
+    };
   app.disable("x-powered-by");
   app.use(
     helmet({
@@ -314,7 +324,11 @@ export function createApp() {
     legacyHeaders: false,
   });
   app.get("/api/health", (_req, res) =>
-    res.json({ ok: mongoose.connection.readyState === 1, app: "ControlRRHH" }),
+    res.json({
+      ok: mongoose.connection.readyState === 1,
+      app: "ControlRRHH",
+      features,
+    }),
   );
   app.get(
     "/api/auth/state",
@@ -334,6 +348,7 @@ export function createApp() {
       res.json({
         setupRequired: !(await Account.exists({ _id: "owner" })),
         account: account ? safe(account) : null,
+        features,
       });
     }),
   );
@@ -351,17 +366,13 @@ export function createApp() {
       maxAge: 8 * 3600000,
       path: "/",
     });
-    res.json({ account: safe(account) });
+    res.json({ account: safe(account), features });
   }
   app.post(
     "/api/auth/setup",
     loginLimiter,
     wrap(async (req, res) => {
-      if (
-        !["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(
-          req.socket.remoteAddress,
-        )
-      )
+      if (!initialSetupAllowed(req.socket.remoteAddress))
         fail("La configuración inicial se realiza desde el servidor.", 403);
       const b = z
         .object({
@@ -410,6 +421,7 @@ export function createApp() {
   );
   app.use(
     "/api/kiosk/:id",
+    requireFaceVision,
     rateLimit({
       windowMs: 60000,
       limit: 180,
@@ -505,6 +517,10 @@ export function createApp() {
       return res.status(403).json({ message: "Requiere administración." });
     next();
   });
+  app.use(
+    ["/api/people/:id/face", "/api/terminals/:id/link"],
+    requireFaceVision,
+  );
   app.get(
     "/api/settings",
     wrap(async (_req, res) => res.json(await Settings.findById("main").lean())),
