@@ -43,7 +43,9 @@ jobs:
         run: |
           node scripts/docker.mjs build "${RELEASE_TAG#v}-verify"
           node scripts/docker.mjs start
-          node scripts/docker-smoke.mjs
+          docker compose --env-file .deploy/compose.env -f compose.yaml exec -T \
+            -e CONTROL_RRHH_URL=http://127.0.0.1:3100 app \
+            node --input-type=module < scripts/docker-smoke.mjs
       - name: Limpiar validación Docker
         if: always()
         run: docker compose --env-file .deploy/compose.env -f compose.yaml down --volumes --remove-orphans
