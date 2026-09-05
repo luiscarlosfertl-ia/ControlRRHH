@@ -1,0 +1,13 @@
+# Always combine with compose.yaml. Direct TLS keeps req.secure/secure cookies correct.
+services:
+  app:
+    environment:
+      TLS_CERT: /run/secrets/tls_cert
+      TLS_KEY: /run/secrets/tls_key
+      HTTPS_PORT: "3444"
+      LAN_HOST: 0.0.0.0
+    ports: ["${LAN_BIND:-0.0.0.0}:${HTTPS_PORT:-3445}:3444"]
+    secrets: [tls_cert, tls_key]
+secrets:
+  tls_cert: { file: ./.deploy/tls/server.pem }
+  tls_key: { file: ./.deploy/tls/server-key.pem }

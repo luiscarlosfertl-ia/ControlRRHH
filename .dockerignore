@@ -1,0 +1,15 @@
+**
+!package.json
+!package-lock.json
+!backend/
+!backend/package.json
+!backend/src/
+!backend/src/**
+!frontend/
+!frontend/package.json
+!frontend/index.html
+!frontend/vite.config.*
+!frontend/public/
+!frontend/public/**
+!frontend/src/
+!frontend/src/**

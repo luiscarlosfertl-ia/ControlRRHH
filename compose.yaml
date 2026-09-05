@@ -1,0 +1,95 @@
+name: controlrrhh
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root
+      MONGO_INITDB_DATABASE: control_rrhh
+    secrets: [mongo_root, mongo_app, mongo_tools]
+    volumes:
+      - mongo_data:/data/db
+      - ./deploy/mongo-init.js:/docker-entrypoint-initdb.d/10-controlrrhh.js:ro
+      - ./deploy/mongo-health.js:/opt/mongo-health.js:ro
+      - ./.deploy/backups:/backups
+    networks: [private]
+    healthcheck:
+      test: [CMD, mongosh, --quiet, /opt/mongo-health.js]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+  facevision:
+    image: controlrrhh-facevision:${APP_VERSION:?Preparar .deploy/compose.env}
+    build: { context: ./.deploy/facevision }
+    restart: unless-stopped
+    environment:
+      HOME: /home/face
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    volumes:
+      - type: bind
+        source: ./.deploy/models/buffalo_l
+        target: /home/face/.insightface/models/buffalo_l
+        read_only: true
+        bind: { create_host_path: false }
+    networks: [private]
+    healthcheck:
+      test:
+        [
+          CMD,
+          python,
+          -c,
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8007/health', timeout=5)",
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
+    security_opt: [no-new-privileges:true]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+  app:
+    image: controlrrhh-app:${APP_VERSION:?Preparar .deploy/compose.env}
+    build: { context: . }
+    init: true
+    restart: unless-stopped
+    depends_on:
+      mongo: { condition: service_healthy }
+      facevision: { condition: service_healthy }
+    environment:
+      NODE_ENV: production
+      HTTP_HOST: 0.0.0.0
+      MONGO_HOST: mongo
+      MONGO_DB: control_rrhh
+      MONGO_USER: controlrrhh
+      MONGO_PASSWORD_FILE: /run/secrets/mongo_app
+      BIOMETRIC_KEY_FILE: /run/secrets/biometric_key
+      FACEVISION_URL: http://facevision:8007
+    secrets: [mongo_app, biometric_key]
+    ports: ["127.0.0.1:${HTTP_PORT:-3110}:3100"]
+    networks: [private]
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3100/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    security_opt: [no-new-privileges:true]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+networks:
+  private: { internal: true }
+volumes:
+  mongo_data:
+secrets:
+  mongo_root: { file: ./.deploy/secrets/mongo-root.txt }
+  mongo_app: { file: ./.deploy/secrets/mongo-app.txt }
+  mongo_tools: { file: ./.deploy/secrets/mongo-tools.yml }
+  biometric_key: { file: ./.deploy/secrets/biometric.key }

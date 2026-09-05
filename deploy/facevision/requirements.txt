@@ -1,0 +1,8 @@
+Flask==3.1.2
+gunicorn==23.0.0
+numpy==2.2.6
+opencv-python-headless==4.12.0.88
+insightface==0.7.3
+onnxruntime==1.23.2
+onnx==1.20.0
+Cython==3.2.4
