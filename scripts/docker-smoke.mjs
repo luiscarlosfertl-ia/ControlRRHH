@@ -43,17 +43,27 @@ const setup = await request("/api/auth/setup", "POST", {
 assert.equal(setup.account.role, "admin");
 assert.deepEqual(setup.features, { faceVision: false });
 
-const group = await request("/api/resources/groups", "POST", {
-  name: `Grupo smoke ${suffix}`,
-  department: "Prueba Docker",
-});
+const group = await request(
+  "/api/resources/groups",
+  "POST",
+  {
+    name: `Grupo smoke ${suffix}`,
+    department: "Prueba Docker",
+  },
+  201,
+);
 const today = new Date().toISOString().slice(0, 10);
-const person = await request("/api/resources/people", "POST", {
-  name: `Persona smoke ${suffix}`,
-  hireDate: today,
-  groupId: group._id,
-  annualLeaveDays: 0,
-});
+const person = await request(
+  "/api/resources/people",
+  "POST",
+  {
+    name: `Persona smoke ${suffix}`,
+    hireDate: today,
+    groupId: group._id,
+    annualLeaveDays: 0,
+  },
+  201,
+);
 await request("/api/attendance/manual", "POST", {
   personId: person._id,
   occurredAt: new Date(Date.now() - 60_000).toISOString(),
