@@ -12,7 +12,7 @@ export function faceVisionEnabled(env = process.env) {
 
 export function initialSetupAllowed(remoteAddress, env = process.env) {
   const address = String(remoteAddress || "").replace(/^::ffff:/, "");
-  if (["localhost", "::1"].includes(address)) return true;
+  if (["localhost", "127.0.0.1", "::1"].includes(address)) return true;
   if (env.INITIAL_SETUP_TRUST_CONTAINER_NETWORK !== "true") return false;
   return (
     /^10\./.test(address) ||

@@ -22,6 +22,8 @@ test("perfiles: FaceVision conserva compatibilidad y admite edición pública", 
 test("configuración inicial: localhost y puente privado explícito", () => {
   assert.equal(initialSetupAllowed("localhost"), true);
   assert.equal(initialSetupAllowed("::ffff:localhost"), true);
+  assert.equal(initialSetupAllowed("127.0.0.1"), true);
+  assert.equal(initialSetupAllowed("::ffff:127.0.0.1"), true);
   assert.equal(initialSetupAllowed("172.18.0.1"), false);
   assert.equal(
     initialSetupAllowed("::ffff:172.18.0.1", {

@@ -18,7 +18,7 @@ git clone https://github.com/luiscarlosfertl-ia/ControlRRHH.git
 cd ControlRRHH
 npm install
 node scripts/docker.mjs prepare
-node scripts/docker.mjs build 0.1.2
+node scripts/docker.mjs build 0.1.3
 node scripts/docker.mjs start
 node scripts/docker.mjs status
 ```
@@ -27,11 +27,11 @@ Abrir **http://localhost:3110** y crear el primer administrador. No existe una c
 
 La API publica `features.faceVision=true`: en **Personas** aparecen **Registrar rostros** y **Probar rostro · sin fichar**. **Registro supervisado** se conserva como alternativa auditada.
 
-La versión completa `0.1.2` se publica en GHCR. Para instalarla sin construir la aplicación:
+La versión completa `0.1.3` se publica en GHCR. Para instalarla sin construir la aplicación:
 
 ```powershell
 node scripts/docker.mjs prepare
-node scripts/docker.mjs pull 0.1.2 --registry
+node scripts/docker.mjs pull 0.1.3 --registry
 node scripts/docker.mjs start --registry
 ```
 
@@ -97,7 +97,7 @@ Para una app publicada:
 ```powershell
 git pull --ff-only
 node scripts/docker.mjs backup --registry
-node scripts/docker.mjs pull 0.1.2 --registry
+node scripts/docker.mjs pull 0.1.3 --registry
 node scripts/docker.mjs start --registry
 ```
 
@@ -130,8 +130,8 @@ El workflow `.github/workflows/publish-containers.yml` responde a etiquetas sem�
 ```powershell
 npm test
 npm run build
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 ## Validación operativa requerida
