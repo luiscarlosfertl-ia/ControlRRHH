@@ -127,6 +127,7 @@ test("Docker: distribución biométrica completa, endpoints internos y dependenc
   assert.match(compose, /facevision: \{ condition: service_healthy \}/);
   assert.match(faceDockerfile, /ensure_available\('models', 'buffalo_l'/);
   assert.match(compose, /BIOMETRIC_KEY_FILE: \/run\/secrets\/biometric_key/);
+  assert.match(compose, /GLIBC_TUNABLES: glibc\.pthread\.rseq=1/);
   assert.equal((compose.match(/condition: service_healthy/g) || []).length, 2);
   assert.equal((compose.match(/^    ports:/gm) || []).length, 1);
   assert.ok(!compose.includes(':27017"') && !compose.includes(':8007"'));

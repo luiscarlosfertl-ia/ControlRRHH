@@ -7,6 +7,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root
       MONGO_INITDB_DATABASE: control_rrhh
+      # Workaround for MongoDB 8 on Linux kernels 6.19 through 7.0.13.
+      GLIBC_TUNABLES: glibc.pthread.rseq=1
     secrets: [mongo_root, mongo_app, mongo_tools]
     volumes:
       - mongo_data:/data/db

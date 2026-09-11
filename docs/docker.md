@@ -9,7 +9,7 @@ ControlRRHH se instala sin usar ni modificar la base, las cuentas o la biometrí
 
 El Compose base contiene los tres servicios y espera los healthchecks de Mongo y FaceVision. `compose.facevision.yaml` queda sólo como archivo de compatibilidad para comandos antiguos.
 
-Requisitos: Docker Engine o Docker Desktop con contenedores Linux, Docker Compose v2 con `up --wait` y Node.js 22 o superior para el asistente multiplataforma. La primera construcción necesita Internet. El puerto local predeterminado es 3110.
+Requisitos: Docker Engine o Docker Desktop con contenedores Linux, Docker Compose v2 con `up --wait` y Node.js 22 o superior para el asistente multiplataforma. La primera construcción necesita Internet. El puerto local predeterminado es 3110. El Compose activa una compatibilidad para MongoDB 8 en kernels Linux 6.19 a 7.0.13 (comunes en Docker Desktop); no es necesario modificar el host.
 
 ## Instalación pública desde el código
 
