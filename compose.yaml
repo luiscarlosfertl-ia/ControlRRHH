@@ -59,7 +59,8 @@ services:
       # Safe while the only published HTTP socket is bound to host loopback.
       INITIAL_SETUP_TRUST_CONTAINER_NETWORK: "true"
     secrets: [mongo_app, biometric_key]
-    ports: ["localhost:${HTTP_PORT:-3110}:3100"]
+    # Compose exige una IP literal aquí; el navegador puede abrir localhost.
+    ports: ["127.0.0.1:${HTTP_PORT:-3110}:3100"]
     networks: [private]
     healthcheck:
       test:
