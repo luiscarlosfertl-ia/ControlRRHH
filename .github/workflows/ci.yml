@@ -37,7 +37,7 @@ jobs:
       - name: Compilar frontend
         run: npm run build
       - name: Construir edición pública Docker
-        run: node scripts/docker.mjs build "0.1.4-ci-${GITHUB_RUN_ID}"
+        run: node scripts/docker.mjs build "0.1.5-ci-${GITHUB_RUN_ID}"
       - name: Iniciar y validar edición pública Docker
         run: |
           node scripts/docker.mjs start
