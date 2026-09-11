@@ -63,7 +63,9 @@ services:
     secrets: [mongo_app, biometric_key]
     # Compose exige una IP literal aquí; el navegador puede abrir localhost.
     ports: ["127.0.0.1:${HTTP_PORT:-3110}:3100"]
-    networks: [private]
+    # La red edge permite a Docker Desktop publicar HTTP en el host. Mongo y
+    # FaceVision no pertenecen a ella y permanecen aislados en private.
+    networks: [private, edge]
     healthcheck:
       test:
         [
@@ -80,6 +82,7 @@ services:
     logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
 networks:
   private: { internal: true }
+  edge: {}
 volumes:
   mongo_data:
 secrets:

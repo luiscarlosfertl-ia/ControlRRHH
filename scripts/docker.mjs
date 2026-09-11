@@ -40,6 +40,9 @@ function version() {
     .match(/^APP_VERSION=(.+)$/m)?.[1]
     .trim();
 }
+function httpPort() {
+  return config().match(/^HTTP_PORT=(\d+)$/m)?.[1] || "3110";
+}
 function checkVersion(v) {
   if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.-]+)?$/.test(v || ""))
     throw new Error("Versión requerida, por ejemplo 0.1.0 o 0.1.1-rc1.");
@@ -94,7 +97,7 @@ function prepare() {
   }
   fresh(
     configPath,
-    "APP_VERSION=0.1.5\nHTTP_PORT=3110\nHTTPS_PORT=3445\nLAN_BIND=0.0.0.0\n",
+    "APP_VERSION=0.1.6\nHTTP_PORT=3110\nHTTPS_PORT=3445\nLAN_BIND=0.0.0.0\n",
     0o600,
   );
   for (const name of ["biometric.key", "mongo-root.txt", "mongo-app.txt"])
@@ -158,7 +161,7 @@ try {
     console.log(
       flag("--lan")
         ? "Abierto por HTTPS en el puerto configurado; usar certificado confiable."
-        : "Abrí http://localhost:3110 (o HTTP_PORT configurado). Creá el primer administrador.",
+        : `Abrí http://localhost:${httpPort()}. Creá el primer administrador.`,
     );
   } else if (command === "pull") {
     if (!flag("--registry"))
