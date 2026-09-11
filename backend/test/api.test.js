@@ -8,11 +8,11 @@ import { hash } from "../src/security.js";
 
 test("API completa aislada: sesión, catálogos, fichadas, revisión, permisos e idempotencia", async (t) => {
   const dbName = `control_rrhh_test_${crypto.randomBytes(8).toString("hex")}`;
-  await mongoose.connect("mongodb://127.0.0.1:27017", { dbName });
+  await mongoose.connect("mongodb://localhost:27017", { dbName });
   await initialize();
-  const server = createApp().listen(0, "127.0.0.1");
+  const server = createApp().listen(0, "localhost");
   await new Promise((resolve) => server.once("listening", resolve));
-  const base = `http://127.0.0.1:${server.address().port}`;
+  const base = `http://localhost:${server.address().port}`;
   let cookie = "";
   async function request(
     path,

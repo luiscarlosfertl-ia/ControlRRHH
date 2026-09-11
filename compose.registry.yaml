@@ -1,3 +1,5 @@
 services:
   app:
     image: ghcr.io/luiscarlosfertl-ia/control-rrhh-app:${APP_VERSION:?Preparar .deploy/compose.env}
+  facevision:
+    image: ghcr.io/luiscarlosfertl-ia/control-rrhh-facevision:${APP_VERSION:?Preparar .deploy/compose.env}

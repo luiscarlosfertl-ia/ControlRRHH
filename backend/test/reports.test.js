@@ -8,11 +8,11 @@ import { Account, Person, Review, Punch } from "../src/models.js";
 
 test("informes: rango, personas, totales completos, filtros, fichadas nocturnas y privacidad", async () => {
   const dbName = `control_rrhh_test_${crypto.randomBytes(8).toString("hex")}`;
-  await mongoose.connect("mongodb://127.0.0.1:27017", { dbName });
+  await mongoose.connect("mongodb://localhost:27017", { dbName });
   await initialize();
-  const server = createApp().listen(0, "127.0.0.1");
+  const server = createApp().listen(0, "localhost");
   await new Promise((r) => server.once("listening", r));
-  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const base = `http://localhost:${server.address().port}/api`;
   let cookie = "";
   async function request(path, status = 200, body) {
     const response = await fetch(base + path, {

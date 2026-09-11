@@ -16,7 +16,7 @@ export async function callFace(operation, body) {
       "FaceVision está deshabilitado en esta instalación. Usá marcación supervisada.",
       503,
     );
-  const base = (process.env.FACEVISION_URL || "http://127.0.0.1:8007").replace(
+  const base = (process.env.FACEVISION_URL || "http://localhost:8007").replace(
     /\/+$/,
     "",
   );

@@ -20,8 +20,8 @@ test("perfiles: FaceVision conserva compatibilidad y admite edición pública", 
 });
 
 test("configuración inicial: localhost y puente privado explícito", () => {
-  assert.equal(initialSetupAllowed("127.0.0.1"), true);
-  assert.equal(initialSetupAllowed("::ffff:127.0.0.1"), true);
+  assert.equal(initialSetupAllowed("localhost"), true);
+  assert.equal(initialSetupAllowed("::ffff:localhost"), true);
   assert.equal(initialSetupAllowed("172.18.0.1"), false);
   assert.equal(
     initialSetupAllowed("::ffff:172.18.0.1", {
@@ -80,7 +80,7 @@ test("Docker: secretos desde archivos, clave biométrica estricta y conexión Mo
       0,
     );
     fs.writeFileSync(file, "synthetic@password:");
-    assert.equal(mongoConnection({}), "mongodb://127.0.0.1:27017");
+    assert.equal(mongoConnection({}), "mongodb://localhost:27017");
     assert.equal(
       mongoConnection({ MONGO_URI: "mongodb://fixture" }),
       "mongodb://fixture",
@@ -105,12 +105,12 @@ test("Docker: secretos desde archivos, clave biométrica estricta y conexión Mo
   }
 });
 
-test("Docker: build sin datos locales, endpoints internos y dependencias saludables", () => {
+test("Docker: distribución biométrica completa, endpoints internos y dependencias saludables", () => {
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const dockerfile = fs.readFileSync(path.join(root, "Dockerfile"), "utf8"),
     compose = fs.readFileSync(path.join(root, "compose.yaml"), "utf8"),
-    faceCompose = fs.readFileSync(
-      path.join(root, "compose.facevision.yaml"),
+    faceDockerfile = fs.readFileSync(
+      path.join(root, "deploy/facevision/Dockerfile"),
       "utf8",
     ),
     ignore = fs.readFileSync(path.join(root, ".dockerignore"), "utf8");
@@ -118,24 +118,19 @@ test("Docker: build sin datos locales, endpoints internos y dependencias saludab
   assert.ok(!ignore.includes("!.deploy"));
   assert.ok(!dockerfile.includes("COPY . "));
   assert.match(dockerfile, /USER node/);
-  assert.match(compose, /FACEVISION_ENABLED: "false"/);
+  assert.match(compose, /FACEVISION_ENABLED: "true"/);
+  assert.match(compose, /FACEVISION_URL: http:\/\/facevision:8007/);
   assert.match(compose, /INITIAL_SETUP_TRUST_CONTAINER_NETWORK: "true"/);
-  assert.doesNotMatch(compose, /^  facevision:/m);
-  assert.doesNotMatch(compose, /FACEVISION_URL/);
-  assert.match(faceCompose, /^  facevision:/m);
-  assert.match(faceCompose, /FACEVISION_ENABLED: "true"/);
-  assert.match(faceCompose, /FACEVISION_URL: http:\/\/facevision:8007/);
+  assert.match(compose, /^  facevision:/m);
+  assert.match(compose, /facevision: \{ condition: service_healthy \}/);
+  assert.match(faceDockerfile, /ensure_available\('models', 'buffalo_l'/);
   assert.match(compose, /BIOMETRIC_KEY_FILE: \/run\/secrets\/biometric_key/);
-  assert.equal((compose.match(/condition: service_healthy/g) || []).length, 1);
-  assert.equal(
-    (faceCompose.match(/condition: service_healthy/g) || []).length,
-    1,
-  );
+  assert.equal((compose.match(/condition: service_healthy/g) || []).length, 2);
   assert.equal((compose.match(/^    ports:/gm) || []).length, 1);
   assert.ok(!compose.includes(':27017"') && !compose.includes(':8007"'));
 });
 
-test("GitHub público: publica sólo app y mantiene FaceVision fuera del repositorio", () => {
+test("GitHub público: publica app y FaceVision integrados", () => {
   const root = fileURLToPath(new URL("../../", import.meta.url));
   const read = (name) => fs.readFileSync(path.join(root, name), "utf8");
   const workflow = read(".github/workflows/publish-containers.yml"),
@@ -149,14 +144,14 @@ test("GitHub público: publica sólo app y mantiene FaceVision fuera del reposit
   assert.match(workflow, /packages: write/);
   assert.match(workflow, /password: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
   assert.match(workflow, /ghcr\.io\/luiscarlosfertl-ia\/control-rrhh-app/);
-  assert.doesNotMatch(workflow, /control-rrhh-facevision/);
-  assert.doesNotMatch(workflow, /deploy\/facevision/);
+  assert.match(workflow, /ghcr\.io\/luiscarlosfertl-ia\/control-rrhh-facevision/);
+  assert.match(workflow, /context: \.\/deploy\/facevision/);
   assert.match(workflow, /sbom: true/);
   assert.match(workflow, /provenance: mode=max/);
   assert.match(workflow, /scripts\/docker-smoke\.mjs/);
   assert.match(ci, /scripts\/docker-smoke\.mjs/);
   assert.match(registry, /control-rrhh-app:\$\{APP_VERSION/);
-  assert.doesNotMatch(registry, /facevision/);
+  assert.match(registry, /control-rrhh-facevision:\$\{APP_VERSION/);
 
   for (const excluded of [
     ".deploy/",
@@ -167,16 +162,14 @@ test("GitHub público: publica sólo app y mantiene FaceVision fuera del reposit
     "*.archive",
   ])
     assert.ok(ignore.includes(excluded), excluded);
-  for (const privateRuntime of [
+  for (const runtime of [
     "deploy/facevision/hr_runtime.py",
     "deploy/facevision/hr_fast_face.py",
     "deploy/facevision/source-manifest.json",
   ]) {
-    assert.ok(ignore.includes(privateRuntime), privateRuntime);
-    assert.equal(fs.existsSync(path.join(root, privateRuntime)), false);
+    assert.ok(!ignore.includes(runtime), runtime);
+    assert.equal(fs.existsSync(path.join(root, runtime)), true);
   }
   assert.match(dockerScript, /command === "build-facevision"/);
-  assert.match(dockerScript, /compose\(\["pull", "app"\]/);
-  assert.match(dockerScript, /flag\("--facevision"\)/);
-  assert.match(dockerScript, /compose\.facevision\.yaml/);
+  assert.match(dockerScript, /\["pull", "app", "facevision"\]/);
 });

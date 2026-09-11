@@ -12,7 +12,7 @@ export function faceVisionEnabled(env = process.env) {
 
 export function initialSetupAllowed(remoteAddress, env = process.env) {
   const address = String(remoteAddress || "").replace(/^::ffff:/, "");
-  if (["127.0.0.1", "::1"].includes(address)) return true;
+  if (["localhost", "::1"].includes(address)) return true;
   if (env.INITIAL_SETUP_TRUST_CONTAINER_NETWORK !== "true") return false;
   return (
     /^10\./.test(address) ||
@@ -23,7 +23,7 @@ export function initialSetupAllowed(remoteAddress, env = process.env) {
 
 export function mongoConnection(env = process.env) {
   if (!env.MONGO_PASSWORD_FILE)
-    return env.MONGO_URI || "mongodb://127.0.0.1:27017";
+    return env.MONGO_URI || "mongodb://localhost:27017";
   const password = fs.readFileSync(env.MONGO_PASSWORD_FILE, "utf8").trim();
   if (!password || !env.MONGO_USER)
     throw new Error("Credenciales Mongo incompletas");

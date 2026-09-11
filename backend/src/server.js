@@ -24,7 +24,7 @@ if (fs.existsSync(dist)) {
     res.sendFile(path.join(dist, "index.html")),
   );
 }
-const bindHost = process.env.HTTP_HOST || "127.0.0.1";
+const bindHost = process.env.HTTP_HOST || "localhost";
 app.listen(Number(process.env.PORT || 3100), bindHost, () =>
   console.log(
     `ControlRRHH http://${bindHost}:${process.env.PORT || 3100} · base ${dbName}`,

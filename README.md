@@ -2,13 +2,13 @@
 
 Aplicación independiente de control horario, React + PatternFly, Node/Express y MongoDB. Base nueva `control_rrhh`, sin importar personas o biometría de Origen Ingenio.
 
-Proyecto público creado por Luis Carlos Fertl con asistencia de desarrollo de Codex. La aplicación y su imagen `ghcr.io/luiscarlosfertl-ia/control-rrhh-app:0.1.0` son públicas; **FaceVision permanece privado**. El runtime facial, sus modelos, manifiestos generados, claves, capturas, embeddings, base y configuración local no forman parte del repositorio ni de la imagen pública. Ver [créditos y desarrollo paso a paso](docs/desarrollo-con-codex.md) y [publicación y actualización](docs/docker.md#publicación-de-versiones).
+Proyecto público creado por Luis Carlos Fertl con asistencia de desarrollo de Codex. La distribución Docker publica la aplicación y el runtime FaceVision CPU coordinados. La imagen facial incluye los modelos necesarios para arrancar; nunca incluye claves, capturas, embeddings enrolados, base ni configuración de cada instalación. Ver [créditos y desarrollo paso a paso](docs/desarrollo-con-codex.md) y [publicación y actualización](docs/docker.md#publicación-de-versiones).
 
 > **Desarrollado con Codex.** Dirección del producto, requisitos y decisiones de publicación: Luis Carlos Fertl. Implementación, documentación y verificación realizadas de forma colaborativa con Codex de OpenAI.
 
 ## Ejecutar
 
-Para instalar on-premise, ver **[ControlRRHH en Docker](docs/docker.md)**. La edición pública ejecuta app + Mongo y usa fichadas supervisadas; la edición biométrica agrega FaceVision privado con `--facevision`. Ambas conservan la misma planificación, procesamiento, revisión, auditoría e informes.
+Para instalar on-premise, ver **[ControlRRHH en Docker](docs/docker.md)**. La distribución pública ejecuta app, Mongo y FaceVision desde el primer inicio; conserva también el registro supervisado como alternativa.
 
 Inicio público desde el código:
 
@@ -17,13 +17,13 @@ git clone https://github.com/luiscarlosfertl-ia/ControlRRHH.git
 cd ControlRRHH
 npm install
 node scripts/docker.mjs prepare
-node scripts/docker.mjs build 0.1.0
+node scripts/docker.mjs build 0.1.1
 node scripts/docker.mjs start
 ```
 
 Abrir http://localhost:3110 y crear el primer administrador. No hay credenciales predeterminadas.
 
-Para ejecución nativa de desarrollo requiere Node 22 o superior, MongoDB local y, sólo si se habilita biometría, un servicio FaceVision compatible en `http://127.0.0.1:8007`.
+Para ejecución nativa de desarrollo requiere Node 22 o superior, MongoDB local y, sólo si se habilita biometría, un servicio FaceVision compatible en `http://localhost:8007`.
 
 ```powershell
 cd C:\Users\luis_\Documents\Playground\ControlRRHH
@@ -32,9 +32,9 @@ npm run build
 npm start
 ```
 
-Abrir http://127.0.0.1:3100. Crear el primer administrador desde el servidor; no hay contraseña predeterminada. No se reutiliza la cuenta de Origen.
+Abrir http://localhost:3100. Crear el primer administrador desde el servidor; no hay contraseña predeterminada. No se reutiliza la cuenta de Origen.
 
-Desarrollo con recarga frontend: `npm run dev`, web http://127.0.0.1:5190. Backend 3100. No arrancar dos backends sobre el mismo puerto.
+Desarrollo con recarga frontend: `npm run dev`, web http://localhost:5190. Backend 3100. No arrancar dos backends sobre el mismo puerto. Si aparece `Origen no autorizado` o un error CORS, ver [diagnóstico de CORS en desarrollo](docs/cors-desarrollo.md) antes de abrir la API a otros orígenes.
 
 ## Flujo de trabajo
 
@@ -42,7 +42,7 @@ Desarrollo con recarga frontend: `npm run dev`, web http://127.0.0.1:5190. Backe
 2. Crear grupos y personas. El legajo es incremental y no requiere correo. El cupo de vacaciones se define por persona.
 3. Crear horarios, ciclos rotativos y asignaciones vigentes a persona o grupo. Un día sin turno dentro del ciclo es descanso; la fecha ancla indica el día 1.
 4. En la edición biométrica, registrar tres capturas de la misma persona con referencia de autorización. El catálogo queda cifrado; puede revocarse. No se importa biometría de otra aplicación.
-5. En la edición biométrica, crear una terminal y generar su enlace privado. En la edición pública, usar Registro supervisado desde Fichadas.
+5. Crear una terminal FaceVision y generar su enlace privado; Registro supervisado sigue disponible desde Fichadas.
 6. Fichar: alterna entrada/salida según la última ficha de ese legajo, independientemente de turnos. Guarda hora del servidor con segundos y coincidencia. Evita duplicados consecutivos. Alternativa manual supervisada con motivo.
 7. Procesar un rango de hasta 31 días. Se generan jornadas en revisión; pares completos salen de pendientes. Entradas abiertas siguen pendientes. Reintentar es seguro si se interrumpió el marcador de procesamiento.
 8. Revisar normales, fuera de turno y extras autorizadas, faltas, tardanzas y salidas anticipadas. Aprobar con observación cuando hay incidencias. Una jornada aprobada debe reabrirse para recalcular.
@@ -92,11 +92,11 @@ Opcionalmente agrega 20 personas **DEMO** activas (10 por grupo) con legajos ún
 
 ## Configuración de entorno
 
-Variables opcionales: `MONGO_URI` (default mongodb://127.0.0.1:27017), `MONGO_DB` (sólo nombres control_rrhh*), `PORT` (3100), `FACEVISION_ENABLED` (default nativo `true`) y `FACEVISION_URL` (http://127.0.0.1:8007). El Compose público establece `FACEVISION_ENABLED=false`; el overlay privado lo habilita.
+Variables opcionales: `MONGO_URI` (default mongodb://localhost:27017), `MONGO_DB` (sólo nombres control_rrhh*), `PORT` (3100), `FACEVISION_ENABLED` (default nativo `true`) y `FACEVISION_URL` (http://localhost:8007). El Compose público inicia FaceVision en la red interna y lo habilita para la aplicación.
 
 Biometría: `BIOMETRIC_KEY`, 32 bytes hex. En desarrollo se crea una clave privada en `.local/biometric.key`. **Respaldar la clave junto con la base, en un almacén separado y protegido**: perderla impide recuperar las capturas. No subirla a Git. En producción es obligatoria la variable; restringir además ACL y cifrado de disco.
 
-LAN/tablet: completar primero el alta del administrador en `http://127.0.0.1:3110`; luego configurar `TLS_CERT`, `TLS_KEY`, opcional `HTTPS_PORT=3444` y `LAN_HOST`. El certificado debe ser confiable en la tablet. El listener HTTP sólo escucha loopback; no se abrió firewall ni se publicó a Internet. El enlace se debe generar desde la URL HTTPS que usará el dispositivo. No usar HTTP por IP para cámaras ni omitir validación de certificados. Preferir proxy/LAN aislada y endpoint de kiosco dedicado antes de producción.
+LAN/tablet: completar primero el alta del administrador en `http://localhost:3110`; luego configurar `TLS_CERT`, `TLS_KEY`, opcional `HTTPS_PORT=3444` y `LAN_HOST`. El certificado debe ser confiable en la tablet. El listener HTTP sólo escucha loopback; no se abrió firewall ni se publicó a Internet. El enlace se debe generar desde la URL HTTPS que usará el dispositivo. No usar HTTP por IP para cámaras ni omitir validación de certificados. Preferir proxy/LAN aislada y endpoint de kiosco dedicado antes de producción.
 
 ## Verificación y alcance
 

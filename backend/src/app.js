@@ -279,6 +279,9 @@ export function createApp() {
         );
       next();
     };
+  // Producción publica la aplicación detrás del Nginx local. Confiar sólo en
+  // loopback permite reconocer HTTPS sin aceptar cabeceras de proxies remotos.
+  app.set("trust proxy", "loopback");
   app.disable("x-powered-by");
   app.use(
     helmet({

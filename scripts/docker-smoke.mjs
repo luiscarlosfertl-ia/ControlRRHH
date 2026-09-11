@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
 
-const base = process.env.CONTROL_RRHH_URL || "http://127.0.0.1:3110";
+const base = process.env.CONTROL_RRHH_URL || "http://localhost:3110";
 let cookie = "";
 
 async function request(path, method = "GET", body, expected = 200) {
@@ -32,7 +32,7 @@ for (let attempt = 0; attempt < 60; attempt += 1) {
 
 const health = await request("/api/health");
 assert.equal(health.app, "ControlRRHH");
-assert.deepEqual(health.features, { faceVision: false });
+assert.deepEqual(health.features, { faceVision: true });
 
 const suffix = crypto.randomBytes(8).toString("hex");
 const setup = await request("/api/auth/setup", "POST", {
@@ -41,7 +41,7 @@ const setup = await request("/api/auth/setup", "POST", {
   password: `Smoke-${crypto.randomBytes(18).toString("base64url")}`,
 });
 assert.equal(setup.account.role, "admin");
-assert.deepEqual(setup.features, { faceVision: false });
+assert.deepEqual(setup.features, { faceVision: true });
 
 const group = await request(
   "/api/resources/groups",

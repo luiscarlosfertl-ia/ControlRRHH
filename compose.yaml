@@ -21,6 +21,23 @@ services:
       retries: 12
       start_period: 30s
     logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
+  facevision:
+    image: controlrrhh-facevision:${APP_VERSION:?Preparar .deploy/compose.env}
+    build: { context: ./deploy/facevision }
+    restart: unless-stopped
+    environment:
+      HOME: /home/face
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    networks: [private]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8007/health', timeout=5)"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+      start_period: 120s
+    security_opt: [no-new-privileges:true]
+    logging: { driver: json-file, options: { max-size: 10m, max-file: "3" } }
   app:
     image: controlrrhh-app:${APP_VERSION:?Preparar .deploy/compose.env}
     build: { context: . }
@@ -28,6 +45,7 @@ services:
     restart: unless-stopped
     depends_on:
       mongo: { condition: service_healthy }
+      facevision: { condition: service_healthy }
     environment:
       NODE_ENV: production
       HTTP_HOST: 0.0.0.0
@@ -36,11 +54,12 @@ services:
       MONGO_USER: controlrrhh
       MONGO_PASSWORD_FILE: /run/secrets/mongo_app
       BIOMETRIC_KEY_FILE: /run/secrets/biometric_key
-      FACEVISION_ENABLED: "false"
+      FACEVISION_ENABLED: "true"
+      FACEVISION_URL: http://facevision:8007
       # Safe while the only published HTTP socket is bound to host loopback.
       INITIAL_SETUP_TRUST_CONTAINER_NETWORK: "true"
     secrets: [mongo_app, biometric_key]
-    ports: ["127.0.0.1:${HTTP_PORT:-3110}:3100"]
+    ports: ["localhost:${HTTP_PORT:-3110}:3100"]
     networks: [private]
     healthcheck:
       test:
@@ -48,7 +67,7 @@ services:
           CMD,
           node,
           -e,
-          "fetch('http://127.0.0.1:3100/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))",
+          "fetch('http://localhost:3100/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))",
         ]
       interval: 20s
       timeout: 5s

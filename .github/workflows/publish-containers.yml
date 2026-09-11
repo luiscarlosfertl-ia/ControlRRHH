@@ -44,7 +44,7 @@ jobs:
           node scripts/docker.mjs build "${RELEASE_TAG#v}-verify"
           node scripts/docker.mjs start
           docker compose --env-file .deploy/compose.env -f compose.yaml exec -T \
-            -e CONTROL_RRHH_URL=http://127.0.0.1:3100 app \
+            -e CONTROL_RRHH_URL=http://localhost:3100 app \
             node --input-type=module < scripts/docker-smoke.mjs
       - name: Limpiar validación Docker
         if: always()
@@ -75,7 +75,19 @@ jobs:
             type=raw,value=latest
           labels: |
             org.opencontainers.image.title=ControlRRHH app
-            org.opencontainers.image.description=Aplicación pública de control horario; FaceVision se integra como servicio privado externo
+            org.opencontainers.image.description=Aplicación pública de control horario con FaceVision integrado
+      - name: Crear etiquetas OCI de FaceVision
+        id: facevision-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/luiscarlosfertl-ia/control-rrhh-facevision
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=ControlRRHH FaceVision
+            org.opencontainers.image.description=Runtime facial CPU integrado de ControlRRHH
             org.opencontainers.image.source=https://github.com/luiscarlosfertl-ia/ControlRRHH
       - name: Construir y publicar
         id: push
@@ -90,9 +102,28 @@ jobs:
           sbom: true
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
+      - name: Construir y publicar FaceVision
+        id: push-facevision
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy/facevision
+          file: ./deploy/facevision/Dockerfile
+          push: true
+          tags: ${{ steps.facevision-meta.outputs.tags }}
+          labels: ${{ steps.facevision-meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=facevision
+          cache-to: type=gha,mode=max,scope=facevision
       - name: Atestar procedencia
         uses: actions/attest@v4
         with:
           subject-name: ghcr.io/luiscarlosfertl-ia/control-rrhh-app
           subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Atestar procedencia de FaceVision
+        uses: actions/attest@v4
+        with:
+          subject-name: ghcr.io/luiscarlosfertl-ia/control-rrhh-facevision
+          subject-digest: ${{ steps.push-facevision.outputs.digest }}
           push-to-registry: true

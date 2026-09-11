@@ -19,11 +19,11 @@ import { resolveSchedule } from "../src/attendance.js";
 
 test("preconfiguraciones: permisos, referencias integradas, opciones, aislamiento y reintento", async () => {
   const dbName = `control_rrhh_test_${crypto.randomBytes(8).toString("hex")}`;
-  await mongoose.connect("mongodb://127.0.0.1:27017", { dbName });
+  await mongoose.connect("mongodb://localhost:27017", { dbName });
   await initialize();
-  const server = createApp().listen(0, "127.0.0.1");
+  const server = createApp().listen(0, "localhost");
   await new Promise((r) => server.once("listening", r));
-  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const base = `http://localhost:${server.address().port}/api`;
   let cookie = "";
   async function req(path, method = "GET", body, expected = 200) {
     const r = await fetch(base + path, {

@@ -39,17 +39,17 @@ test("contrato FaceVision: 3 capturas cifradas, coincidencia, fichaje y revocaci
       faces: [{ x: 0.35, y: 0.3, width: 0.3, height: 0.4 }],
     }),
   );
-  const sdkServer = sdk.listen(0, "127.0.0.1");
+  const sdkServer = sdk.listen(0, "localhost");
   await new Promise((resolve) => sdkServer.once("listening", resolve));
-  process.env.FACEVISION_URL = `http://127.0.0.1:${sdkServer.address().port}`;
+  process.env.FACEVISION_URL = `http://localhost:${sdkServer.address().port}`;
   process.env.BIOMETRIC_KEY = crypto.randomBytes(32).toString("hex");
   const { createApp, initialize } = await import("../src/app.js");
   const dbName = `control_rrhh_test_${crypto.randomBytes(8).toString("hex")}`;
-  await mongoose.connect("mongodb://127.0.0.1:27017", { dbName });
+  await mongoose.connect("mongodb://localhost:27017", { dbName });
   await initialize();
-  const server = createApp().listen(0, "127.0.0.1");
+  const server = createApp().listen(0, "localhost");
   await new Promise((resolve) => server.once("listening", resolve));
-  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const base = `http://localhost:${server.address().port}/api`;
   let cookie = "";
   async function req(path, method = "GET", body, expected = 200, headers = {}) {
     const r = await fetch(base + path, {

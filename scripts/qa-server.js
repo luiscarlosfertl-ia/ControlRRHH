@@ -18,7 +18,7 @@ import {
 import { root, passwordHash, hash } from "../backend/src/security.js";
 import { DateTime } from "luxon";
 const name = `control_rrhh_test_${crypto.randomBytes(8).toString("hex")}`;
-await mongoose.connect("mongodb://127.0.0.1:27017", { dbName: name });
+await mongoose.connect("mongodb://localhost:27017", { dbName: name });
 await initialize();
 await Account.create({
   _id: "owner",
@@ -147,8 +147,8 @@ app.use(express.static(dist));
 app.get("/{*splat}", (_req, res) =>
   res.sendFile(path.join(dist, "index.html")),
 );
-const server = app.listen(3101, "127.0.0.1", () =>
-  console.log(JSON.stringify({ qa: "http://127.0.0.1:3101", database: name })),
+const server = app.listen(3101, "localhost", () =>
+  console.log(JSON.stringify({ qa: "http://localhost:3101", database: name })),
 );
 let closing = false;
 async function close() {

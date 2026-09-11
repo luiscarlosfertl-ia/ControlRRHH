@@ -6,9 +6,8 @@ frontend/dist/
 !.env.example
 *.log
 .deploy/
-deploy/facevision/hr_runtime.py
-deploy/facevision/hr_fast_face.py
-deploy/facevision/source-manifest.json
+!.deploy/
+.deploy/*
 releases/
 coverage/
 __pycache__/
