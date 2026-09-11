@@ -73,8 +73,8 @@ await request("/api/attendance/manual", "POST", {
 });
 const punches = await request("/api/resources/punches?pending=true");
 assert.equal(punches.total, 1);
-await request(`/api/people/${person._id}/face`, "POST", {}, 503);
+await request(`/api/people/${person._id}/face`, "POST", {}, 400);
 
 console.log(
-  "OK: edición pública operativa, marcación supervisada y biometría aislada.",
+  "OK: distribución completa operativa con FaceVision y marcación supervisada.",
 );
