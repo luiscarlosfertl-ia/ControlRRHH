@@ -1,7 +1,7 @@
 {
   "name": "control-rrhh",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "author": "Luis Carlos Fertl, desarrollado con Codex de OpenAI",
   "homepage": "https://github.com/luiscarlosfertl-ia/ControlRRHH",
   "repository": {

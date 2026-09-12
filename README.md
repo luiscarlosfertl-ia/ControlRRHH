@@ -17,7 +17,7 @@ git clone https://github.com/luiscarlosfertl-ia/ControlRRHH.git
 cd ControlRRHH
 npm install
 node scripts/docker.mjs prepare
-node scripts/docker.mjs build 0.1.7
+node scripts/docker.mjs build 0.1.8
 node scripts/docker.mjs start
 ```
 

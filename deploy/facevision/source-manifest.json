@@ -12,6 +12,7 @@
     "_largest_face_embedding": "1bf1587ea94e010802743783240926def2cd8574f79fef597b7ca8e912bd16a5",
     "_read_bgr_from_base64": "599ff68917b5a79c04331708d9bcfa9006be5866b6d1b4cfb89c3dcce020f0bf",
     "_embedding_to_json": "7ecaa8718153995e0f06dadf5c5d7c6050a4e642764868eba24cc45b0571d81b",
+    "_embedding_from_json": "1b306a7831cb5881fd03452d9e08b38c1938e820cdc284fe0dc96e8a94cb1dfd",
     "_face_embedding_engine_status": "5be01e78c1ea53626fb195ebc49099b3d6e20d6afc4eb43853c1fc2d331931bc",
     "_json_safe": "e09bc4f19674f5558084d570758704ced43b1fddea677562af806f2bd4c2cc6a",
     "_quality_from_faces": "4584a73f61b08800ad2330f98a8bd8128ded5a645d7db8ccf11174bfc680cda4",

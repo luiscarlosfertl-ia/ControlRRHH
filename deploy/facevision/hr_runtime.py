@@ -170,6 +170,16 @@ def _embedding_to_json(embedding) -> list:
     return np.asarray(embedding, dtype=np.float32).reshape(-1).tolist()
 
 
+def _embedding_from_json(value):
+    try:
+        arr = np.asarray(value or [], dtype=np.float32).reshape(-1)
+        if arr.size == 0:
+            return None
+        return arr / (np.linalg.norm(arr) + 1e-12)
+    except Exception:
+        return None
+
+
 def _face_embedding_engine_status() -> tuple[bool, str]:
     if insightface is None:
         return False, "InsightFace no esta disponible en FaceVision. Revise dependencias del entorno Python."

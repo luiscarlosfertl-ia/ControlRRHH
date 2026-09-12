@@ -14,7 +14,7 @@ FUNCTIONS = (
     "get_face_cascade", "_detect_faces_bgr", "_ctx_id", "_fa_key",
     "_reset_face_app", "_get_face_app", "_faces_for", "_get_embedding",
     "_largest_face_embedding", "_read_bgr_from_base64", "_embedding_to_json",
-    "_face_embedding_engine_status", "_json_safe", "_quality_from_faces", "_cos",
+    "_embedding_from_json", "_face_embedding_engine_status", "_json_safe", "_quality_from_faces", "_cos",
     "_template_embedding_items", "face_auth_enroll", "face_auth_verify",
 )
 HEADER = '''# Generated from sdk-faceVision. Do not edit: regenerate the release context.

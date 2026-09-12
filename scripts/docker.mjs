@@ -97,7 +97,7 @@ function prepare() {
   }
   fresh(
     configPath,
-    "APP_VERSION=0.1.7\nHTTP_PORT=3110\nHTTPS_PORT=3445\nLAN_BIND=0.0.0.0\n",
+    "APP_VERSION=0.1.8\nHTTP_PORT=3110\nHTTPS_PORT=3445\nLAN_BIND=0.0.0.0\n",
     0o600,
   );
   for (const name of ["biometric.key", "mongo-root.txt", "mongo-app.txt"])

@@ -131,6 +131,7 @@ test("Docker: distribución biométrica completa, endpoints internos y dependenc
   assert.match(compose, /facevision: \{ condition: service_healthy \}/);
   assert.match(faceDockerfile, /ensure_available\('models', 'buffalo_l'/);
   assert.match(faceRuntime, /@app\.route\("\/face-auth\/verify", methods=\["POST"\]\)/);
+  assert.match(faceRuntime, /def _embedding_from_json\(value\):/);
   assert.match(compose, /BIOMETRIC_KEY_FILE: \/run\/secrets\/biometric_key/);
   assert.match(compose, /GLIBC_TUNABLES: glibc\.pthread\.rseq=1/);
   assert.match(compose, /networks: \[private, edge\]/);
