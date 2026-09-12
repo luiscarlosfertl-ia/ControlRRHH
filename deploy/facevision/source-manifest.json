@@ -15,7 +15,10 @@
     "_face_embedding_engine_status": "5be01e78c1ea53626fb195ebc49099b3d6e20d6afc4eb43853c1fc2d331931bc",
     "_json_safe": "e09bc4f19674f5558084d570758704ced43b1fddea677562af806f2bd4c2cc6a",
     "_quality_from_faces": "4584a73f61b08800ad2330f98a8bd8128ded5a645d7db8ccf11174bfc680cda4",
-    "face_auth_enroll": "410bb7ceee14b65b3d214381bde2a2d45c7eba086051df07ffe40623e9854cdc"
+    "_cos": "82078d47ecf9c67158fe170709bd9b26b4085f45bbf0717565e801e172ea2f7b",
+    "_template_embedding_items": "ce74466366b2dc9329fb9dbb99b4e5759ff7f2e8a3dc2e1678e8adb746bb140b",
+    "face_auth_enroll": "410bb7ceee14b65b3d214381bde2a2d45c7eba086051df07ffe40623e9854cdc",
+    "face_auth_verify": "21cf9be7fc2b88080e2e1694fd810c30788c2fd6c468d12f6b06f946701a6763"
   },
   "fastRoutesSha256": "f09fd5e598bd769f582e39ee11dacd7a217f8f47a04e613f0ce96fde682712ff"
 }

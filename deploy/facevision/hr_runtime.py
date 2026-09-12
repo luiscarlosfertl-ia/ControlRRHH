@@ -197,6 +197,32 @@ def _quality_from_faces(img_bgr, embedding) -> dict:
     }
 
 
+def _cos(a, b) -> float:
+    """Coseno normalizado en [0..1]."""
+    if a is None or b is None:
+        return 0.0
+    a = np.asarray(a, dtype=np.float32).reshape(-1)
+    b = np.asarray(b, dtype=np.float32).reshape(-1)
+    m = min(a.size, b.size)
+    if m == 0:
+        return 0.0
+    a = a[:m]
+    b = b[:m]
+    a /= (np.linalg.norm(a) + 1e-12)
+    b /= (np.linalg.norm(b) + 1e-12)
+    return float(np.clip(np.dot(a, b), 0.0, 1.0))
+
+
+def _template_embedding_items(template: dict) -> list[tuple[str, np.ndarray]]:
+    emb = template.get("embeddings") or {}
+    items = []
+    for key, value in emb.items():
+        parsed = _embedding_from_json(value)
+        if parsed is not None:
+            items.append((str(key), parsed))
+    return items
+
+
 @app.route("/face-auth/enroll", methods=["POST"])
 def face_auth_enroll():
     try:
@@ -233,6 +259,59 @@ def face_auth_enroll():
         })
     except Exception as e:
         logger.exception("/face-auth/enroll error")
+        return jsonify({"status": "nok", "message": str(e)}), 500
+
+
+@app.route("/face-auth/verify", methods=["POST"])
+def face_auth_verify():
+    try:
+        body = request.get_json(silent=True) or {}
+        templates = body.get("templates") or []
+        captures = body.get("captures") or {}
+        required = ("near",)
+        images = {key: _read_bgr_from_base64(captures.get(key)) for key in required}
+        if not templates:
+            return jsonify({"status": "nok", "message": "El usuario no tiene rostro enrolado."}), 400
+        if any(images[key] is None for key in required):
+            return jsonify({"status": "nok", "message": "Se requiere captura de rostro."}), 400
+
+        engine_ok, engine_message = _face_embedding_engine_status()
+        if not engine_ok:
+            return jsonify({"status": "nok", "message": engine_message}), 503
+
+        probe = {key: _largest_face_embedding(images[key]) for key in required}
+        if any(probe[key] is None for key in required):
+            return jsonify({"status": "nok", "message": "No se pudo detectar un rostro valido en la captura."}), 422
+
+        best = {"similarity": 0.0, "templateIndex": -1, "detail": {}}
+        for index, template in enumerate(templates):
+            sims = []
+            detail = {}
+            for tpl_key, tpl_embedding in _template_embedding_items(template):
+                sim = _cos(probe["near"], tpl_embedding)
+                sims.append(sim)
+                detail[f"near_vs_{tpl_key}"] = sim
+            similarity = float(max(sims or [0.0]))
+            if similarity > best["similarity"]:
+                best = {"similarity": similarity, "templateIndex": index, "detail": detail}
+
+        threshold = float(body.get("threshold") or 0.72)
+        verified = bool(best["similarity"] >= threshold)
+        return jsonify({
+            "status": "ok",
+            "verified": verified,
+            "similarity": best["similarity"],
+            "threshold": threshold,
+            "templateIndex": best["templateIndex"],
+            "quality": {
+                "captureMode": "single",
+                "face": _quality_from_faces(images["near"], probe["near"])
+            },
+            "comparisons": best["detail"],
+            "liveness_single": None
+        })
+    except Exception as e:
+        logger.exception("/face-auth/verify error")
         return jsonify({"status": "nok", "message": str(e)}), 500
 
 register_hr_fast_routes(app, _read_bgr_from_base64, _detect_faces_bgr, _faces_for)
